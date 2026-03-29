@@ -1,0 +1,38 @@
+# render.yaml — Render.com deployment configuration
+# Deploys backend API + Redis in one file
+
+services:
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  - type: web
+    name: stock-dashboard-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: NEWS_API_KEY
+        sync: false          # set manually in Render dashboard
+      - key: REDDIT_CLIENT_ID
+        sync: false
+      - key: REDDIT_CLIENT_SECRET
+        sync: false
+      - key: REDDIT_USER_AGENT
+        value: StockDashboard/1.0
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: stock-dashboard-redis
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        sync: false          # set to your Vercel URL after deploy
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  - type: redis
+    name: stock-dashboard-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
